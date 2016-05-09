@@ -125,7 +125,6 @@ void setState(){
   }
   
   if(temperature < MIN_VALUE_TEMP){
-    if(state != CRITICAL)
       state = LOW_TEMP;
   }
   else{
