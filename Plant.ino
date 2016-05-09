@@ -1,15 +1,19 @@
 #include <Servo.h> 
+#include <EEPROM.h>
+
 
 #define MAX_VALUE_LIGHT 1000
 #define MIN_VALUE_LIGHT 0
 #define MAX_VALUE_TEMP 40
 #define MIN_VALUE_TEMP 20
 #define LIGHT_SENSOR A0
-#define TEMPERATURE_SENSOR 1
+#define TEMPERATURE_SENSOR A1
 #define SERVO 9
 #define RELEASE 120
 #define LOCKED 30
-#define TIMER_TO_WAIT 28000
+#define RED_COLOR 10
+#define GREEN_COLOR 11
+#define BLUE_COLOR 12
 float temperature;
 int light;
 int timer;
@@ -36,6 +40,13 @@ void setup() {
   pinMode(TEMPERATURE_SENSOR, INPUT);
   servo.attach(SERVO);
   timer = 0;
+  pinMode(RED_COLOR, INPUT);
+  pinMode(GREEN_COLOR, INPUT);
+  pinMode(BLUE_COLOR, INPUT);
+  EEPROM.write(0, MIN_VALUE_LIGHT);
+  EEPROM.write(100, MAX_VALUE_LIGHT);
+  EEPROM.write(200, MIN_VALUE_TEMP);
+  EEPROM.write(300, MAX_VALUE_TEMP);
   Serial.begin(9600);
 }
 
@@ -46,7 +57,6 @@ void loop() {
   Serial.println(temperature);
   setState();
   doActions();
-  delay(TIMER_TO_WAIT);
 }
 
 void getMeditions(){
@@ -57,28 +67,46 @@ void getMeditions(){
 }
 
 void doActions(){
-  if(state == CRITICAL ){
-      servo.write(RELEASE);
-      Serial.println("crit");
-  }
-  else if(state == HIGH_LIGHT ){
-    Serial.println("High light");
-  }
-  else if(state == LOW_TEMP){
+
+  if(state == LOW_TEMP){
+    analogWrite(RED_COLOR,255);
     Serial.println("low temp");
+    delay(30000);
   }
   else if(state == HIGH_TEMP){
       servo.write(RELEASE);
-            Serial.println("high temp");
+      for(int i = 0; i < 60; i++){
+        analogWrite(RED_COLOR, 255);
+        delay(250);
+        analogWrite(RED_COLOR, 0);
+        delay(250);
+    }
   }
+  else if(state == HIGH_LIGHT ){
+    Serial.println("High light");
+      for(int i = 0; i < 60; i++){
+        analogWrite(GREEN_COLOR, 255);
+        analogWrite(RED_COLOR, 255);
+        delay(250);
+        analogWrite(GREEN_COLOR, 0);
+        analogWrite(RED_COLOR, 0);
+        delay(250);
+    }
+  }
+ 
   else if(state == LOW_LIGHT){
     Serial.println("low light");
+    analogWrite(GREEN_COLOR, 255);
+    analogWrite(RED_COLOR, 255);
+    delay(30000);
   }
   else{
+    analogWrite(GREEN_COLOR,255);
+    delay(30000);
     servo.write(LOCKED);
           Serial.println("lock");
+          
   }
-  // no comprobamos mas, sino esta OK
 }
 
 
@@ -95,26 +123,19 @@ void setState(){
       Serial.println("Temp ok");
     }
   }
+  
   if(temperature < MIN_VALUE_TEMP){
-    setCritical();
     if(state != CRITICAL)
       state = LOW_TEMP;
-    
   }
   else{
     if(temperature > MAX_VALUE_TEMP){
-       setCritical();
-       if(state != CRITICAL)
-        state = HIGH_TEMP;
+       state = HIGH_TEMP;
     }
   }
 }
 
-void setCritical(){
-  if(state > 0){
-    state = CRITICAL;
-  }
-}
+
 
 int readInput(int pinInput){
   int sum = 0;
