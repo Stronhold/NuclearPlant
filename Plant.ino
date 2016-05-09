@@ -127,7 +127,7 @@ int readInput(int pinInput){
 
 float getVoltage(int pin)
 {
-  int lecture = analogRead(pin);
+  int lecture = readInput(pin);
   float voltage = lecture * 5.0;
   voltage /= 1024;
   return (voltage-0.5)*100;
