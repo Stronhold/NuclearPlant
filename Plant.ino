@@ -20,6 +20,7 @@ int MIN_VALUE_TEMP = 20;
 #define RED_COLOR 2
 #define GREEN_COLOR 3
 #define BLUE_COLOR 8
+#define BUZZER 5
 float temperature;
 int fadeAmount = 1;
 int light;
@@ -58,6 +59,7 @@ void setup() {
   Serial.println(MIN_VALUE_LIGHT);
   Serial.println(MAX_VALUE_LIGHT);
   Serial.println(MIN_VALUE_TEMP);
+  pinMode(BUZZER, OUTPUT);   // sets the pin as output
   
   Serial.begin(9600);
 
@@ -73,6 +75,9 @@ void loop() {
   state = EVERYTHING_OK;
   doActions();
   connectToWiFi();
+  analogWrite(BUZZER,128);
+  delay(1000);
+  digitalWrite(BUZZER, LOW);
   doPost();
 }
 
