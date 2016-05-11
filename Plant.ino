@@ -79,6 +79,7 @@ void loop() {
   getMeditions();
   timer++;
   Serial.println(temperature);
+  Serial.println(light);
   setState();
   state = EVERYTHING_OK;
   doActions();
@@ -86,19 +87,27 @@ void loop() {
   //analogWrite(BUZZER,128);
   delay(1000);
   digitalWrite(BUZZER, LOW);
-  doPost();
+  doPostTemperature();
+  doPostLight();
 }
 
-void doPost(){
+void doPostTemperature(){
   int err;
-  Serial.println("ENVIAMOS DATOS");
+  Serial.print("ENVIAMOS TEMP: ");
+  Serial.println(temperature);
   WiFiClient c;
   HttpClient http(c);
-  Serial.println(temperature);
+  sprintf(kPath,"%s%.2f",path_prefixTemp,temperature);
+  err = http.get(kHostname, kPath);
+  http.stop();
+}
+
+void doPostLight(){
+  int err;
+  Serial.print("ENVIAMOS LUZ: ");
   Serial.println(light);
-  //sprintf(kPath,"%s%f",path_prefixTemp,temperature);
-  //err = http.get(kHostname, kPath);
-  //http.stop();
+  WiFiClient c;
+  HttpClient http(c);
   sprintf(kPath,"%s%d",path_prefixLight,light);
   err = http.get(kHostname, kPath);
   http.stop();
