@@ -11,7 +11,8 @@ char pass[] = "";   // your network password
 // Name of the server we want to connect to
 const char kHostname[] = "json.internetdelascosas.es";
 // Prefix of the path to use
-const char path_prefix[] = "/arduino/add.php?device_id=1&data_name=accel&data_value=";
+const char path_prefixTemp[] = "/arduino/add.php?device_id=125&data_name=temp&data_value=";
+const char path_prefixLight[] = "/arduino/add.php?device_id=125&data_name=light&data_value=";
 // Variable of the max size expected to store the complete path after adding
 char kPath[200] = "";
 
@@ -70,7 +71,7 @@ void setup() {
   
   Serial.begin(9600);
 
-  //connectToWiFi();
+  connectToWiFi();
 }
 
 void loop() {
@@ -89,14 +90,17 @@ void loop() {
 }
 
 void doPost(){
+  int err;
   Serial.println("ENVIAMOS DATOS");
   WiFiClient c;
   HttpClient http(c);
-  Serial.println(light);
   Serial.println(temperature);
-  sprintf(kPath,"%s%d",path_prefix,light);
-  //sprintf(kPath,"%s%d",path_prefix,temperature);
-  int err = http.get(kHostname, kPath);
+  Serial.println(light);
+  //sprintf(kPath,"%s%f",path_prefixTemp,temperature);
+  //err = http.get(kHostname, kPath);
+  //http.stop();
+  sprintf(kPath,"%s%d",path_prefixLight,light);
+  err = http.get(kHostname, kPath);
   http.stop();
 }
 
