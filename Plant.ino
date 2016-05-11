@@ -2,10 +2,10 @@
 #include <EEPROM.h>
 
 
-#define MAX_VALUE_LIGHT 1000
-#define MIN_VALUE_LIGHT 0
-#define MAX_VALUE_TEMP 40
-#define MIN_VALUE_TEMP 20
+int MAX_VALUE_LIGHT = 1000;
+int MIN_VALUE_LIGHT = 0;
+int MAX_VALUE_TEMP = 40;
+int MIN_VALUE_TEMP = 20;
 #define LIGHT_SENSOR A0
 #define TEMPERATURE_SENSOR A1
 #define SERVO 9
@@ -15,6 +15,7 @@
 #define GREEN_COLOR 11
 #define BLUE_COLOR 12
 float temperature;
+int fadeAmount = 1;
 int light;
 int timer;
 Servo servo;
@@ -43,10 +44,10 @@ void setup() {
   pinMode(RED_COLOR, INPUT);
   pinMode(GREEN_COLOR, INPUT);
   pinMode(BLUE_COLOR, INPUT);
-  EEPROM.write(0, MIN_VALUE_LIGHT);
-  EEPROM.write(100, MAX_VALUE_LIGHT);
-  EEPROM.write(200, MIN_VALUE_TEMP);
-  EEPROM.write(300, MAX_VALUE_TEMP);
+  MIN_VALUE_LIGHT = EEPROM.read(0);
+  MAX_VALUE_LIGHT = EEPROM.read(100);
+  MIN_VALUE_TEMP = EEPROM.read(200);
+  MAX_VALUE_TEMP = EEPROM.read(300);
   Serial.begin(9600);
 }
 
@@ -56,6 +57,7 @@ void loop() {
   timer++;
   Serial.println(temperature);
   setState();
+  state = EVERYTHING_OK;
   doActions();
 }
 
@@ -75,6 +77,8 @@ void doActions(){
   }
   else if(state == HIGH_TEMP){
       servo.write(RELEASE);
+      int brightness = 5;
+
       for(int i = 0; i < 60; i++){
         analogWrite(RED_COLOR, 255);
         delay(250);
@@ -84,6 +88,8 @@ void doActions(){
   }
   else if(state == HIGH_LIGHT ){
     Serial.println("High light");
+      int brightness = 5;
+
       for(int i = 0; i < 60; i++){
         analogWrite(GREEN_COLOR, 255);
         analogWrite(RED_COLOR, 255);
@@ -101,7 +107,16 @@ void doActions(){
     delay(30000);
   }
   else{
-    analogWrite(GREEN_COLOR,255);
+    int bright = 1;
+    for(int i = 0; i < 1500; i++){
+      bright += fadeAmount;
+        if(bright == 0 ||bright == 255)
+        {
+          fadeAmount = -fadeAmount; 
+        }
+        analogWrite(GREEN_COLOR,bright);
+        delay(20);
+    }
     delay(30000);
     servo.write(LOCKED);
           Serial.println("lock");
