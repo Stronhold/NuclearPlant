@@ -8,6 +8,13 @@
 char ssid[] = "MCU";
 char pass[] = "";   // your network password
 
+// Name of the server we want to connect to
+const char kHostname[] = "json.internetdelascosas.es";
+// Prefix of the path to use
+const char path_prefix[] = "/arduino/add.php?device_id=1&data_name=accel&data_value=";
+// Variable of the max size expected to store the complete path after adding
+char kPath[200] = "";
+
 int MAX_VALUE_LIGHT = 1000;
 int MIN_VALUE_LIGHT = 0;
 int MAX_VALUE_TEMP = 40;
@@ -75,33 +82,29 @@ void loop() {
   state = EVERYTHING_OK;
   doActions();
   connectToWiFi();
-  analogWrite(BUZZER,128);
+  //analogWrite(BUZZER,128);
   delay(1000);
   digitalWrite(BUZZER, LOW);
   doPost();
 }
 
 void doPost(){
-WiFiClient c;
-  HttpClient client(c);
-  String PostData = "someDataToPost";
-  const char* server = "";
-  if (client.connect(server, 80)) {
-    client.println("POST /Api/AddParking/3 HTTP/1.1");
-    client.println("Host: 10.0.0.138");
-    client.println("User-Agent: Arduino/1.0");
-    client.println("Connection: close");
-    client.print("Content-Length: ");
-    client.println(PostData.length());
-    client.println();
-    client.println(PostData);
-  }
+  Serial.println("ENVIAMOS DATOS");
+  WiFiClient c;
+  HttpClient http(c);
+  Serial.println(light);
+  Serial.println(temperature);
+  sprintf(kPath,"%s%d",path_prefix,light);
+  //sprintf(kPath,"%s%d",path_prefix,temperature);
+  int err = http.get(kHostname, kPath);
+  http.stop();
 }
+
 void getMeditions(){
   light = readInput(LIGHT_SENSOR);
   temperature = getVoltage(TEMPERATURE_SENSOR);
-  Serial.println(light);
-  Serial.println(temperature);
+  //Serial.println(light);
+  //Serial.println(temperature);
 }
 
 void doActions(){
@@ -146,7 +149,7 @@ void doActions(){
     int bright = 1;
     for(int i = 0; i < 30000; i++){
       bright += fadeAmount;
-      Serial.println(bright);
+      //Serial.println(bright);
         if(bright == 0 ||bright == 255)
         {
           fadeAmount = -fadeAmount; 
