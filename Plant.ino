@@ -1,6 +1,12 @@
 #include <Servo.h> 
 #include <EEPROM.h>
+#include <SPI.h>
+#include <HttpClient.h>
+#include <WiFi.h>
+#include <aJSON.h>
 
+char ssid[] = "MCU";
+char pass[] = "";   // your network password
 
 int MAX_VALUE_LIGHT = 1000;
 int MIN_VALUE_LIGHT = 0;
@@ -11,14 +17,15 @@ int MIN_VALUE_TEMP = 20;
 #define SERVO 9
 #define RELEASE 120
 #define LOCKED 30
-#define RED_COLOR 10
-#define GREEN_COLOR 11
-#define BLUE_COLOR 12
+#define RED_COLOR 2
+#define GREEN_COLOR 3
+#define BLUE_COLOR 8
 float temperature;
 int fadeAmount = 1;
 int light;
 int timer;
 Servo servo;
+
 //temperature has priority
 enum State{
   EVERYTHING_OK = 0,
@@ -48,7 +55,13 @@ void setup() {
   MAX_VALUE_LIGHT = EEPROM.read(100);
   MIN_VALUE_TEMP = EEPROM.read(200);
   MAX_VALUE_TEMP = EEPROM.read(300);
+  Serial.println(MIN_VALUE_LIGHT);
+  Serial.println(MAX_VALUE_LIGHT);
+  Serial.println(MIN_VALUE_TEMP);
+  
   Serial.begin(9600);
+
+  //connectToWiFi();
 }
 
 void loop() {
@@ -59,8 +72,26 @@ void loop() {
   setState();
   state = EVERYTHING_OK;
   doActions();
+  connectToWiFi();
+  doPost();
 }
 
+void doPost(){
+WiFiClient c;
+  HttpClient client(c);
+  String PostData = "someDataToPost";
+  const char* server = "";
+  if (client.connect(server, 80)) {
+    client.println("POST /Api/AddParking/3 HTTP/1.1");
+    client.println("Host: 10.0.0.138");
+    client.println("User-Agent: Arduino/1.0");
+    client.println("Connection: close");
+    client.print("Content-Length: ");
+    client.println(PostData.length());
+    client.println();
+    client.println(PostData);
+  }
+}
 void getMeditions(){
   light = readInput(LIGHT_SENSOR);
   temperature = getVoltage(TEMPERATURE_SENSOR);
@@ -108,20 +139,52 @@ void doActions(){
   }
   else{
     int bright = 1;
-    for(int i = 0; i < 1500; i++){
+    for(int i = 0; i < 30000; i++){
       bright += fadeAmount;
+      Serial.println(bright);
         if(bright == 0 ||bright == 255)
         {
           fadeAmount = -fadeAmount; 
         }
         analogWrite(GREEN_COLOR,bright);
-        delay(20);
+        delay(1);
     }
-    delay(30000);
     servo.write(LOCKED);
           Serial.println("lock");
-          
   }
+}
+
+void connectToWiFi(){
+  int status = WiFi.status();
+  // attempt to connect to Wifi network:
+  while ( WiFi.status() != WL_CONNECTED) { 
+    Serial.print("Attempting to connect to SSID: ");
+    Serial.println(ssid);
+    // Connect to WPA/WPA2 network. Change this line if using open or WEP network:    
+    status = WiFi.begin(ssid);
+    // wait 10 seconds for connection:
+    delay(5000);
+  } 
+  Serial.println("connected");
+  // you're connected now, so print out the status:
+  printWifiStatus();
+}
+
+void printWifiStatus() {
+  // print the SSID of the network you're attached to:
+  Serial.print("SSID: ");
+  Serial.println(WiFi.SSID());
+
+  // print your WiFi shield's IP address:
+  IPAddress ip = WiFi.localIP();
+  Serial.print("IP Address: ");
+  Serial.println(ip);
+
+  // print the received signal strength:
+  long rssi = WiFi.RSSI();
+  Serial.print("Signal strength (RSSI):");
+  Serial.print(rssi);
+  Serial.println(" dBm");
 }
 
 
