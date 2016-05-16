@@ -17,7 +17,7 @@ const char path_prefixLight[] = "/arduino/add.php?device_id=125&data_name=light&
 char kPath[200] = "";
 
 int MAX_VALUE_LIGHT = 1000;
-int MIN_VALUE_LIGHT = 0;
+int MIN_VALUE_LIGHT = 300;
 int MAX_VALUE_TEMP = 40;
 int MIN_VALUE_TEMP = 20;
 #define LIGHT_SENSOR A0
@@ -32,7 +32,6 @@ int MIN_VALUE_TEMP = 20;
 float temperature;
 int fadeAmount = 1;
 int light;
-int timer;
 Servo servo;
 
 //temperature has priority
@@ -56,12 +55,11 @@ void setup() {
   pinMode(LIGHT_SENSOR, INPUT);
   pinMode(TEMPERATURE_SENSOR, INPUT);
   servo.attach(SERVO);
-  timer = 0;
   pinMode(RED_COLOR, INPUT);
   pinMode(GREEN_COLOR, INPUT);
   pinMode(BLUE_COLOR, INPUT);
-  MIN_VALUE_LIGHT = EEPROM.read(0);
-  MAX_VALUE_LIGHT = EEPROM.read(100);
+  MIN_VALUE_LIGHT = EEPROM.read(0)*4;
+  MAX_VALUE_LIGHT = EEPROM.read(100)*4;
   MIN_VALUE_TEMP = EEPROM.read(200);
   MAX_VALUE_TEMP = EEPROM.read(300);
   Serial.println(MIN_VALUE_LIGHT);
@@ -77,14 +75,10 @@ void setup() {
 void loop() {
   // put your main code here, to run repeatedly:
   getMeditions();
-  timer++;
-  Serial.println(temperature);
-  Serial.println(light);
   setState();
-  state = EVERYTHING_OK;
   doActions();
   connectToWiFi();
-  //analogWrite(BUZZER,128);
+  analogWrite(BUZZER,128);
   delay(1000);
   digitalWrite(BUZZER, LOW);
   doPostTemperature();
@@ -97,7 +91,8 @@ void doPostTemperature(){
   Serial.println(temperature);
   WiFiClient c;
   HttpClient http(c);
-  sprintf(kPath,"%s%.2f",path_prefixTemp,temperature);
+  int finalTemp = (int) temperature;
+  sprintf(kPath,"%s%d",path_prefixTemp,finalTemp);
   err = http.get(kHostname, kPath);
   http.stop();
 }
@@ -128,6 +123,7 @@ void doActions(){
     delay(30000);
   }
   else if(state == HIGH_TEMP){
+      Serial.println("high temp");
       servo.write(RELEASE);
       int brightness = 5;
 
@@ -219,7 +215,7 @@ void setState(){
       state = HIGH_LIGHT;
     }
     else{
-      Serial.println("Temp ok");
+      Serial.println("Light ok");
     }
   }
   
